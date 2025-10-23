@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>com.sa.healntrack</groupId>
 	<artifactId>discovery_server</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>1.0.0</version>
 	<name>discovery_server</name>
 	<description>Discovery Server for Eureka microservices</description>
 	<url/>
