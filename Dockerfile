@@ -6,7 +6,7 @@ COPY discovery-server/pom.xml .
 
 COPY discovery-server/src ./src
 
-RUN mvn -f pom.xml clean package
+RUN mvn pom.xml clean package
 
 FROM eclipse-temurin:21-jre
 
