@@ -15,7 +15,6 @@ jobs:
       - name: Set environment variables based on branch
         shell: bash
         run: |
-          # Nombre lógico del app (constante)
           echo "SPRING_APPLICATION_NAME=discovery-server" >> $GITHUB_ENV
 
           if [ "${GITHUB_REF_NAME}" = "main" ]; then
