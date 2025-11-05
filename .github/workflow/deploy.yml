@@ -1,0 +1,66 @@
+name: discovery-server
+
+on:
+  push:
+    branches: [develop, main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set environment variables based on branch
+        shell: bash
+        run: |
+          # Nombre lógico del app (constante)
+          echo "SPRING_APPLICATION_NAME=discovery-server" >> $GITHUB_ENV
+
+          if [ "${GITHUB_REF_NAME}" = "main" ]; then
+            echo "HOST=${{ secrets.GCP_VM_HOST_PROD }}" >> $GITHUB_ENV
+            echo "EUREKA_HOSTNAME=${{ secrets.EUREKA_HOSTNAME_PROD }}" >> $GITHUB_ENV
+
+            if [ -n "${{ secrets.SERVER_PORT_PROD }}" ]; then
+              echo "SERVER_PORT=${{ secrets.SERVER_PORT_PROD }}" >> $GITHUB_ENV
+            else
+              echo "SERVER_PORT=8761" >> $GITHUB_ENV
+            fi
+          else
+            echo "HOST=${{ secrets.GCP_VM_HOST }}" >> $GITHUB_ENV
+            echo "EUREKA_HOSTNAME=${{ secrets.EUREKA_HOSTNAME }}" >> $GITHUB_ENV
+
+            if [ -n "${{ secrets.SERVER_PORT }}" ]; then
+              echo "SERVER_PORT=${{ secrets.SERVER_PORT }}" >> $GITHUB_ENV
+            else
+              echo "SERVER_PORT=8761" >> $GITHUB_ENV
+            fi
+          fi
+
+      - name: Set up SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.GCP_VM_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H "$HOST" >> ~/.ssh/known_hosts
+
+      - name: Deploy to VM
+        run: |
+          ssh ${{ secrets.GCP_VM_USER }}@"$HOST" << EOF
+            set -e
+            cd ./healntrack-discovery-server
+            git checkout ${GITHUB_REF_NAME}
+            git pull
+            sudo docker build -t discovery-server .
+
+            sudo docker stop discovery-server || true
+            sudo docker rm discovery-server || true
+
+            sudo docker run -d --name discovery-server \
+              -p "$SERVER_PORT:$SERVER_PORT" \
+              -e SERVER_PORT="$SERVER_PORT" \
+              -e SPRING_APPLICATION_NAME="$SPRING_APPLICATION_NAME" \
+              -e EUREKA_HOSTNAME="$EUREKA_HOSTNAME" \
+              discovery-server
+          EOF
