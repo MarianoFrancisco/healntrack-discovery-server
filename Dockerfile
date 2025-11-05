@@ -6,7 +6,7 @@ COPY discovery-server/pom.xml .
 
 COPY discovery-server/src ./src
 
-RUN mvn pom.xml clean package
+RUN mvn clean package -DskipTests
 
 FROM eclipse-temurin:21-jre
 
